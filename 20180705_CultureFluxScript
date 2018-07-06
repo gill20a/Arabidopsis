@@ -1,0 +1,945 @@
+setwd("~/Dropbox/UMN/Arabidopsis experiment/Flux measurements/") #Set network drive, will have to change for your own computer
+Flux<-read.csv("20180705_Culture_FluxData.csv", sep=",", header=T) #Name your data file to call it later in the code
+head(Flux)
+# install.packages("Hmisc")
+# install.packages("Matrix")
+library(Hmisc)
+library(Matrix)
+
+##Calibration Data
+KnownConcentrations<-c(0, 645, 1025, 10000)
+
+
+##Change format of time stamps
+Flux$Time_1<-as.POSIXct(as.character(Flux$Time_1), format="%H:%M:%S")
+Flux$Time_2<-as.POSIXct(as.character(Flux$Time_2), format="%H:%M:%S")
+Flux$Time_3<-as.POSIXct(as.character(Flux$Time_3), format="%H:%M:%S")
+Flux$Time_4<-as.POSIXct(as.character(Flux$Time_4), format="%H:%M:%S")
+
+#Calculate amount of time elapsed during measurements
+Flux$TimeInt_1<-as.numeric(as.character(difftime(Flux$Time_1, Flux$Time_1))) #Should be a vector full of zeros
+Flux$TimeInt_2<-as.numeric(as.character(difftime(Flux$Time_2, Flux$Time_1)))
+Flux$TimeInt_3<-as.numeric(as.character(difftime(Flux$Time_3, Flux$Time_1)))
+Flux$TimeInt_4<-as.numeric(as.character(difftime(Flux$Time_4, Flux$Time_1)))
+
+
+#Read Concentrations. Will need to update these values during for measurement period. Replace any obviously strange values with NA.
+LowStd<-c(639, 460, 598)
+MedStd<-c(1039, 812, 908)
+HighStd<-c(7717, 8094, 737)
+ReadConcentrations<-c(0, mean(LowStd, na.rm=T), mean(MedStd, na.rm=T), mean(HighStd, na.rm=T))
+
+CalibrationSlope<-coef(lm(ReadConcentrations~KnownConcentrations))[2] 
+CalibrationR2<-summary(lm(ReadConcentrations~KnownConcentrations))$r.squared 
+
+Flux$CO2_1_umol<-Flux$CO2_1_ppm/CalibrationSlope*(0.4/(0.082057*295))
+Flux$CO2_2_umol<-Flux$CO2_2_ppm/CalibrationSlope*(0.4/(0.082057*295))
+Flux$CO2_3_umol<-Flux$CO2_3_ppm/CalibrationSlope*(0.4/(0.082057*295))
+Flux$CO2_4_umol<-Flux$CO2_4_ppm/CalibrationSlope*(0.4/(0.082057*295))
+
+
+#########################Jar1 Flux data
+plot(unlist(Flux[1,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[1,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[1,"TimeInt_4"]<-NA
+Flux[1,"CO2_4_umol"]<-NA
+Jar1_slope<-coef(lm(unlist(Flux[1,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[1,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar1_R2<-summary(lm(unlist(Flux[1,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[1,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar1_slope
+Jar1_R2
+
+##
+plot(unlist(Flux[2,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[2,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[2,"TimeInt_3"]<-NA
+Flux[2,"CO2_3_umol"]<-NA
+Jar2_slope<-coef(lm(unlist(Flux[2,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[2,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar2_R2<-summary(lm(unlist(Flux[2,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[2,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar2_slope
+Jar2_R2
+
+##
+plot(unlist(Flux[3,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[3,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[3,"TimeInt_1"]<-NA
+Flux[3,"CO2_1_umol"]<-NA
+Jar3_slope<-coef(lm(unlist(Flux[3,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[3,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar3_R2<-summary(lm(unlist(Flux[3,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[3,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar3_slope
+Jar3_R2
+
+##
+plot(unlist(Flux[4,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[4,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[4,"TimeInt_1"]<-NA
+Flux[4,"CO2_1_umol"]<-NA
+Jar4_slope<-coef(lm(unlist(Flux[4,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[4,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar4_R2<-summary(lm(unlist(Flux[4,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[4,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar4_slope
+Jar4_R2
+
+
+##
+plot(unlist(Flux[5,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[5,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[5,"TimeInt_4"]<-NA
+Flux[5,"CO2_4_umol"]<-NA
+Jar5_slope<-coef(lm(unlist(Flux[5,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[5,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar5_R2<-summary(lm(unlist(Flux[5,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[5,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar5_slope
+Jar5_R2
+
+##
+plot(unlist(Flux[6,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[6,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[6,"TimeInt_3"]<-NA
+Flux[6,"CO2_3_umol"]<-NA
+Jar6_slope<-coef(lm(unlist(Flux[6,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[6,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar6_R2<-summary(lm(unlist(Flux[6,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[6,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar6_slope
+Jar6_R2
+
+##
+plot(unlist(Flux[7,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[7,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[7,"TimeInt_4"]<-NA
+Flux[7,"CO2_4_umol"]<-NA
+Jar7_slope<-coef(lm(unlist(Flux[7,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[7,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar7_R2<-summary(lm(unlist(Flux[7,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[7,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar7_slope
+Jar7_R2
+
+##
+plot(unlist(Flux[8,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[8,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[8,"TimeInt_3"]<-NA
+Flux[8,"CO2_3_umol"]<-NA
+Jar8_slope<-coef(lm(unlist(Flux[8,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[8,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar8_R2<-summary(lm(unlist(Flux[8,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[8,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar8_slope
+Jar8_R2
+
+##
+plot(unlist(Flux[9,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[9,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[9,"TimeInt_4"]<-NA
+Flux[9,"CO2_4_umol"]<-NA
+Jar9_slope<-coef(lm(unlist(Flux[9,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[9,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar9_R2<-summary(lm(unlist(Flux[9,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[9,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar9_slope
+Jar9_R2
+
+##
+plot(unlist(Flux[10,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[10,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[10,"TimeInt_4"]<-NA
+Flux[10,"CO2_4_umol"]<-NA
+Jar10_slope<-coef(lm(unlist(Flux[10,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                      unlist(Flux[10,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar10_R2<-summary(lm(unlist(Flux[10,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                      unlist(Flux[10,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar10_slope
+Jar10_R2
+
+##
+plot(unlist(Flux[11,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[11,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[11,"TimeInt_4"]<-NA
+Flux[11,"CO2_4_umol"]<-NA
+Jar12_slope<-coef(lm(unlist(Flux[11,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[11,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar11_R2<-summary(lm(unlist(Flux[11,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[11,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar11_slope
+Jar11_R2
+
+##
+plot(unlist(Flux[11,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[11,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[11,"TimeInt_4"]<-NA
+Flux[11,"CO2_4_umol"]<-NA
+Jar11_slope<-coef(lm(unlist(Flux[11,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[11,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar11_R2<-summary(lm(unlist(Flux[11,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[11,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar11_slope
+Jar11_R2
+
+##
+plot(unlist(Flux[12,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[12,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[12,"TimeInt_4"]<-NA
+Flux[12,"CO2_4_umol"]<-NA
+Jar12_slope<-coef(lm(unlist(Flux[12,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[12,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar12_R2<-summary(lm(unlist(Flux[12,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[12,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar12_slope
+Jar12_R2
+
+##
+plot(unlist(Flux[13,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[13,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[13,"TimeInt_3"]<-NA
+Flux[13,"CO2_3_umol"]<-NA
+Jar13_slope<-coef(lm(unlist(Flux[13,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[13,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar13_R2<-summary(lm(unlist(Flux[13,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[13,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar13_slope
+Jar13_R2
+
+##
+plot(unlist(Flux[14,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[14,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[14,"TimeInt_2"]<-NA
+Flux[14,"CO2_2_umol"]<-NA
+Jar14_slope<-coef(lm(unlist(Flux[14,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[14,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar14_R2<-summary(lm(unlist(Flux[14,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[14,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar14_slope
+Jar14_R2
+
+
+##
+plot(unlist(Flux[15,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[15,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[15,"TimeInt_3"]<-NA
+Flux[15,"CO2_3_umol"]<-NA
+plot(unlist(Flux[15,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[15,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar15_slope<-coef(lm(unlist(Flux[15,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[15,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar15_R2<-summary(lm(unlist(Flux[15,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[15,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar15_slope
+Jar15_R2
+
+##
+plot(unlist(Flux[16,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[16,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[16,"TimeInt_3"]<-NA
+Flux[16,"CO2_3_umol"]<-NA
+plot(unlist(Flux[16,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[16,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar16_slope<-coef(lm(unlist(Flux[16,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[16,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar16_R2<-summary(lm(unlist(Flux[16,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[16,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar16_slope
+Jar16_R2
+
+##
+plot(unlist(Flux[17,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[17,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[17,"TimeInt_3"]<-NA
+Flux[17,"CO2_3_umol"]<-NA
+plot(unlist(Flux[17,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[17,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar17_slope<-coef(lm(unlist(Flux[17,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[17,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar17_R2<-summary(lm(unlist(Flux[17,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[17,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar17_slope
+Jar17_R2
+
+
+##
+plot(unlist(Flux[18,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[18,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[18,"TimeInt_2"]<-NA
+Flux[18,"CO2_2_umol"]<-NA
+plot(unlist(Flux[18,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[18,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar18_slope<-coef(lm(unlist(Flux[18,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[18,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar18_R2<-summary(lm(unlist(Flux[18,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[18,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar18_slope
+Jar18_R2
+
+##
+plot(unlist(Flux[19,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[19,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[19,"TimeInt_2"]<-NA
+Flux[19,"CO2_2_umol"]<-NA
+plot(unlist(Flux[19,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[19,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar19_slope<-coef(lm(unlist(Flux[19,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[19,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar19_R2<-summary(lm(unlist(Flux[19,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[19,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar19_slope
+Jar19_R2
+
+##
+plot(unlist(Flux[20,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[20,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[20,"TimeInt_2"]<-NA
+Flux[20,"CO2_2_umol"]<-NA
+plot(unlist(Flux[20,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[20,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar20_slope<-coef(lm(unlist(Flux[20,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[20,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar20_R2<-summary(lm(unlist(Flux[20,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[20,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar20_slope
+Jar20_R2
+
+##
+plot(unlist(Flux[21,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[21,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[21,"TimeInt_2"]<-NA
+Flux[21,"CO2_2_umol"]<-NA
+plot(unlist(Flux[21,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[21,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar21_slope<-coef(lm(unlist(Flux[21,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[21,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar21_R2<-summary(lm(unlist(Flux[21,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[21,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar21_slope
+Jar21_R2
+
+##
+plot(unlist(Flux[22,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[22,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Flux[22,"TimeInt_2"]<-NA
+Flux[22,"CO2_2_umol"]<-NA
+plot(unlist(Flux[22,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[22,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+Jar22_slope<-coef(lm(unlist(Flux[22,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[22,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar22_R2<-summary(lm(unlist(Flux[22,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[22,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar22_slope
+Jar22_R2
+
+##
+plot(unlist(Flux[23,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[23,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[23,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+         unlist(Flux[23,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[23,"TimeInt_2"]<-NA
+Flux[23,"CO2_2_umol"]<-NA
+plot(unlist(Flux[23,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[23,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[23,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[23,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar23_slope<-coef(lm(unlist(Flux[23,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[23,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar23_R2<-summary(lm(unlist(Flux[23,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[23,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar23_slope
+Jar23_R2
+
+##
+plot(unlist(Flux[24,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[24,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[24,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[24,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[24,"TimeInt_2"]<-NA
+Flux[24,"CO2_2_umol"]<-NA
+plot(unlist(Flux[24,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[24,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[24,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[24,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar24_slope<-coef(lm(unlist(Flux[24,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[24,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar24_R2<-summary(lm(unlist(Flux[24,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[24,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar24_slope
+Jar24_R2
+
+
+##
+plot(unlist(Flux[25,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[25,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[25,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[25,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[25,"TimeInt_4"]<-NA
+Flux[25,"CO2_4_umol"]<-NA
+plot(unlist(Flux[25,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[25,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[25,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[25,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar25_slope<-coef(lm(unlist(Flux[25,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[25,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar25_R2<-summary(lm(unlist(Flux[25,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[25,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar25_slope
+Jar25_R2
+
+##
+plot(unlist(Flux[26,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[26,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[26,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[26,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[26,"TimeInt_3"]<-NA
+Flux[26,"CO2_3_umol"]<-NA
+plot(unlist(Flux[26,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[26,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[26,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[26,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar26_slope<-coef(lm(unlist(Flux[26,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[26,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar26_R2<-summary(lm(unlist(Flux[26,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[26,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar26_slope
+Jar26_R2
+
+##
+plot(unlist(Flux[27,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[27,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[27,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[27,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[27,"TimeInt_3"]<-NA
+Flux[27,"CO2_3_umol"]<-NA
+plot(unlist(Flux[27,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[27,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[27,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[27,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar27_slope<-coef(lm(unlist(Flux[27,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[27,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar27_R2<-summary(lm(unlist(Flux[27,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[27,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar27_slope
+Jar27_R2
+
+##
+plot(unlist(Flux[28,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[28,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[28,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[28,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[28,"TimeInt_4"]<-NA
+Flux[28,"CO2_4_umol"]<-NA
+plot(unlist(Flux[28,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[28,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[28,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[28,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar28_slope<-coef(lm(unlist(Flux[28,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[28,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar28_R2<-summary(lm(unlist(Flux[28,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[28,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar28_slope
+Jar28_R2
+
+##
+plot(unlist(Flux[29,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[29,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[29,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[29,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[29,"TimeInt_4"]<-NA
+Flux[29,"CO2_4_umol"]<-NA
+plot(unlist(Flux[29,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[29,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[29,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[29,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar29_slope<-coef(lm(unlist(Flux[29,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[29,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar29_R2<-summary(lm(unlist(Flux[29,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[29,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar29_slope
+Jar29_R2
+
+##
+plot(unlist(Flux[30,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[30,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[30,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[30,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[30,"TimeInt_4"]<-NA
+Flux[30,"CO2_4_umol"]<-NA
+plot(unlist(Flux[30,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[30,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[30,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[30,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar30_slope<-coef(lm(unlist(Flux[30,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[30,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar30_R2<-summary(lm(unlist(Flux[30,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[30,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar30_slope
+Jar30_R2
+
+##
+plot(unlist(Flux[31,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[31,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[31,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[31,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[31,"TimeInt_3"]<-NA
+# Flux[31,"CO2_3_umol"]<-NA
+plot(unlist(Flux[31,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[31,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[31,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[31,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar31_slope<-coef(lm(unlist(Flux[31,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[31,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar31_R2<-summary(lm(unlist(Flux[31,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[31,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar31_slope
+Jar31_R2
+
+##
+plot(unlist(Flux[32,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[32,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[32,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[32,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[32,"TimeInt_4"]<-NA
+Flux[32,"CO2_4_umol"]<-NA
+plot(unlist(Flux[32,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[32,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[32,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[32,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar32_slope<-coef(lm(unlist(Flux[32,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[32,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar32_R2<-summary(lm(unlist(Flux[32,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[32,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar32_slope
+Jar32_R2
+
+##
+plot(unlist(Flux[33,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[33,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[33,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[33,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[33,"TimeInt_4"]<-NA
+Flux[33,"CO2_4_umol"]<-NA
+plot(unlist(Flux[33,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[33,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[33,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[33,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar33_slope<-coef(lm(unlist(Flux[33,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[33,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar33_R2<-summary(lm(unlist(Flux[33,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[33,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar33_slope
+Jar33_R2
+
+##
+plot(unlist(Flux[34,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[34,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[34,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[34,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[34,"TimeInt_2"]<-NA
+Flux[34,"CO2_2_umol"]<-NA
+plot(unlist(Flux[34,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[34,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[34,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[34,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar34_slope<-coef(lm(unlist(Flux[34,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[34,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar34_R2<-summary(lm(unlist(Flux[34,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[34,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar34_slope
+Jar34_R2
+
+##
+plot(unlist(Flux[35,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[35,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[35,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[35,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[35,"TimeInt_3"]<-NA
+Flux[35,"CO2_3_umol"]<-NA
+plot(unlist(Flux[35,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[35,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[35,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[35,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar35_slope<-coef(lm(unlist(Flux[35,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[35,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar35_R2<-summary(lm(unlist(Flux[35,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[35,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar35_slope
+Jar35_R2
+
+##
+plot(unlist(Flux[36,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[36,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[36,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[36,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[36,"TimeInt_3"]<-NA
+Flux[36,"CO2_3_umol"]<-NA
+plot(unlist(Flux[36,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[36,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[36,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[36,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar36_slope<-coef(lm(unlist(Flux[36,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[36,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar36_R2<-summary(lm(unlist(Flux[36,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[36,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar36_slope
+Jar36_R2
+
+##
+plot(unlist(Flux[37,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[37,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[37,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[37,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[37,"TimeInt_3"]<-NA
+Flux[37,"CO2_3_umol"]<-NA
+plot(unlist(Flux[37,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[37,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[37,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[37,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar37_slope<-coef(lm(unlist(Flux[37,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[37,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar37_R2<-summary(lm(unlist(Flux[37,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[37,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar37_slope
+Jar37_R2
+
+##
+plot(unlist(Flux[38,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[38,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[38,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[38,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[38,"TimeInt_2"]<-NA
+Flux[38,"CO2_2_umol"]<-NA
+plot(unlist(Flux[38,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[38,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[38,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[38,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar38_slope<-coef(lm(unlist(Flux[38,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[38,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar38_R2<-summary(lm(unlist(Flux[38,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[38,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar38_slope
+Jar38_R2
+
+##
+plot(unlist(Flux[39,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[39,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[39,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[39,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[39,"TimeInt_3"]<-NA
+Flux[39,"CO2_3_umol"]<-NA
+plot(unlist(Flux[39,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[39,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[39,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[39,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar39_slope<-coef(lm(unlist(Flux[39,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[39,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar39_R2<-summary(lm(unlist(Flux[39,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[39,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar39_slope
+Jar39_R2
+
+##
+plot(unlist(Flux[40,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[40,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[40,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[40,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[40,"TimeInt_4"]<-NA
+Flux[40,"CO2_4_umol"]<-NA
+plot(unlist(Flux[40,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[40,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[40,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[40,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar40_slope<-coef(lm(unlist(Flux[40,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[40,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar40_R2<-summary(lm(unlist(Flux[40,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[40,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar40_slope
+Jar40_R2
+
+##
+plot(unlist(Flux[41,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[41,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[41,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[41,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[41,"TimeInt_3"]<-NA
+# Flux[41,"CO2_3_umol"]<-NA
+plot(unlist(Flux[41,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[41,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[41,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[41,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar41_slope<-coef(lm(unlist(Flux[41,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[41,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar41_R2<-summary(lm(unlist(Flux[41,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[41,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar41_slope
+Jar41_R2
+
+##
+plot(unlist(Flux[42,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[42,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[42,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[42,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[42,"TimeInt_4"]<-NA
+# Flux[42,"CO2_4_umol"]<-NA
+plot(unlist(Flux[42,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[42,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[42,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[42,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar42_slope<-coef(lm(unlist(Flux[42,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[42,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar42_R2<-summary(lm(unlist(Flux[42,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[42,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar42_slope
+Jar42_R2
+
+##
+plot(unlist(Flux[43,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[43,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[43,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[43,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[43,"TimeInt_2"]<-NA
+# Flux[43,"CO2_2_umol"]<-NA
+plot(unlist(Flux[43,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[43,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[43,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[43,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar43_slope<-coef(lm(unlist(Flux[43,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[43,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar43_R2<-summary(lm(unlist(Flux[43,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[43,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar43_slope
+Jar43_R2
+
+##
+plot(unlist(Flux[44,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[44,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[44,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[44,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[44,"TimeInt_2"]<-NA
+# Flux[44,"CO2_2_umol"]<-NA
+plot(unlist(Flux[44,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[44,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[44,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[44,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar44_slope<-coef(lm(unlist(Flux[44,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[44,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar44_R2<-summary(lm(unlist(Flux[44,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[44,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar44_slope
+Jar44_R2
+
+##
+plot(unlist(Flux[45,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[45,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[45,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[45,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[45,"TimeInt_2"]<-NA
+# Flux[45,"CO2_2_umol"]<-NA
+plot(unlist(Flux[45,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[45,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[45,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[45,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar45_slope<-coef(lm(unlist(Flux[45,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[45,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar45_R2<-summary(lm(unlist(Flux[45,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[45,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar45_slope
+Jar45_R2
+
+##
+plot(unlist(Flux[46,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[46,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[46,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[46,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[46,"TimeInt_2"]<-NA
+# Flux[46,"CO2_2_umol"]<-NA
+plot(unlist(Flux[46,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[46,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[46,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[46,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar46_slope<-coef(lm(unlist(Flux[46,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[46,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar46_R2<-summary(lm(unlist(Flux[46,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[46,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar46_slope
+Jar46_R2
+
+##
+plot(unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[47,"TimeInt_2"]<-NA
+# Flux[47,"CO2_2_umol"]<-NA
+plot(unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar47_slope<-coef(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar47_R2<-summary(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar47_slope
+Jar47_R2
+
+##
+plot(unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[47,"TimeInt_2"]<-NA
+# Flux[47,"CO2_2_umol"]<-NA
+plot(unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar49_slope<-coef(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar49_R2<-summary(lm(unlist(Flux[47,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[47,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar49_slope
+Jar49_R2
+
+##
+plot(unlist(Flux[48,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[48,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[48,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[48,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[48,"TimeInt_2"]<-NA
+# Flux[48,"CO2_2_umol"]<-NA
+plot(unlist(Flux[48,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[48,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[48,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[48,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar48_slope<-coef(lm(unlist(Flux[48,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[48,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar48_R2<-summary(lm(unlist(Flux[48,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[48,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar48_slope
+Jar48_R2
+
+##
+plot(unlist(Flux[49,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[49,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[49,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[49,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[49,"TimeInt_3"]<-NA
+Flux[49,"CO2_3_umol"]<-NA
+plot(unlist(Flux[49,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[49,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[49,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[49,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar49_slope<-coef(lm(unlist(Flux[49,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[49,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar49_R2<-summary(lm(unlist(Flux[49,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[49,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar49_slope
+Jar49_R2
+
+##
+plot(unlist(Flux[50,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[50,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[50,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[50,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[50,"TimeInt_4"]<-NA
+# Flux[50,"CO2_4_umol"]<-NA
+plot(unlist(Flux[50,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[50,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[50,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[50,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar50_slope<-coef(lm(unlist(Flux[50,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[50,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar50_R2<-summary(lm(unlist(Flux[50,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[50,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar50_slope
+Jar50_R2
+
+##
+plot(unlist(Flux[51,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[51,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[51,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[51,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Flux[51,"TimeInt_3"]<-NA
+Flux[51,"CO2_3_umol"]<-NA
+plot(unlist(Flux[51,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[51,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[51,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[51,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar51_slope<-coef(lm(unlist(Flux[51,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[51,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar51_R2<-summary(lm(unlist(Flux[51,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[51,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar51_slope
+Jar51_R2
+
+##
+plot(unlist(Flux[52,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[52,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[52,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[52,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+# Flux[52,"TimeInt_3"]<-NA
+# Flux[52,"CO2_3_umol"]<-NA
+plot(unlist(Flux[52,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")]), 
+     unlist(Flux[52,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )]))
+abline(lm(unlist(Flux[52,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+            unlist(Flux[52,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])), col="red")
+Jar52_slope<-coef(lm(unlist(Flux[52,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol")])~
+                       unlist(Flux[52,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))[2] 
+Jar52_R2<-summary(lm(unlist(Flux[52,c("CO2_1_umol","CO2_2_umol","CO2_3_umol","CO2_4_umol" )])~
+                       unlist(Flux[52,c("TimeInt_1","TimeInt_2","TimeInt_3","TimeInt_4")])))$r.squared 
+Jar52_slope
+Jar52_R2
+
+Flux$CO2Flux_ug<-c(Jar1_slope, Jar2_slope, Jar3_slope,Jar4_slope,Jar5_slope,Jar6_slope,Jar7_slope,Jar8_slope,Jar9_slope,
+          Jar10_slope,Jar11_slope,Jar12_slope,Jar13_slope,Jar14_slope,Jar15_slope,Jar16_slope,Jar17_slope,Jar18_slope,
+          Jar19_slope,Jar20_slope,Jar21_slope,Jar22_slope,Jar23_slope,Jar24_slope,Jar25_slope,Jar26_slope,Jar27_slope,
+          Jar28_slope,Jar29_slope,Jar30_slope,Jar31_slope,Jar32_slope,Jar33_slope,Jar34_slope,Jar35_slope,Jar36_slope,
+          Jar37_slope,Jar38_slope,Jar39_slope,Jar40_slope, Jar41_slope,Jar42_slope,Jar43_slope,Jar44_slope,Jar45_slope,Jar46_slope,
+          Jar47_slope,Jar48_slope,Jar49_slope,Jar50_slope, Jar51_slope,Jar52_slope)
+
+Flux$CO2Flux_R2<-c(Jar1_R2, Jar2_R2, Jar3_R2,Jar4_R2,Jar5_R2,Jar6_R2,Jar7_R2,Jar8_R2,Jar9_R2,
+                   Jar10_R2,Jar11_R2,Jar12_R2,Jar13_R2,Jar14_R2,Jar15_R2,Jar16_R2,Jar17_R2,Jar18_R2,
+                   Jar19_R2,Jar20_R2,Jar21_R2,Jar22_R2,Jar23_R2,Jar24_R2,Jar25_R2,Jar26_R2,Jar27_R2,
+                   Jar28_R2,Jar29_R2,Jar30_R2,Jar31_R2,Jar32_R2,Jar33_R2,Jar34_R2,Jar35_R2,Jar36_R2,
+                   Jar37_R2,Jar38_R2,Jar39_R2,Jar40_R2, Jar41_R2,Jar42_R2,Jar43_R2,Jar44_R2,Jar45_R2,Jar46_R2,
+                   Jar47_R2,Jar48_R2,Jar49_R2,Jar50_R2, Jar51_R2,Jar52_R2)
+
+write.csv(Flux, "20180706_CultureFluxData_Processed.csv")
+
+head(Flux)
+unique(Flux$Species)
+
+Flux$Species<-ordered(Flux$Species, levels=c("Gloeophyllum trabeum", "Postia placenta", "Schizophyllum commune", 
+                                             "Pycnoporus cinnabarinus", "Trametes hirsuta", NA))
+
+pick1<-Flux$MesocosmTreatment=="WoodChip" 
+WoodchipMeans<-tapply(Flux[pick1,"CO2Flux_ug"], Flux[pick1,"Species"], mean, na.rm=T)
+WoodchipUpper<-tapply(Flux[pick1,"CO2Flux_ug"], Flux[pick1,"Species"], quantile, 0.975, na.rm=T)
+WoodchipLower<-tapply(Flux[pick1,"CO2Flux_ug"], Flux[pick1,"Species"], quantile, 0.025, na.rm=T)
+
+pick1<-Flux$MesocosmTreatment=="NoChip" 
+NochipMeans<-tapply(Flux[pick1,"CO2Flux_ug"], Flux[pick1,"Species"], mean, na.rm=T)
+NochipUpper<-tapply(Flux[pick1,"CO2Flux_ug"], Flux[pick1,"Species"], quantile, 0.975, na.rm=T)
+NochipLower<-tapply(Flux[pick1,"CO2Flux_ug"], Flux[pick1,"Species"], quantile, 0.025, na.rm=T)
+
+
+Means<-rbind(as.vector(WoodchipMeans), as.vector(NochipMeans))
+Upper<-rbind(as.vector(WoodchipUpper), as.vector(NochipUpper))
+Lower<-rbind(as.vector(WoodchipLower), as.vector(NochipLower))
+
+par(mar=c(5.5,4,1,4))
+barx<-barplot(rbind(as.vector(WoodchipMeans), as.vector(NochipMeans)), beside=T, ylim=c(0,4.5), col=c("#0072B2","#e79f00"))
+position<-barx
+# axis(side=2, tck=0.02, labels=NA)
+# axis(side=2, lwd=0, line = -.4, las=1, cex.axis=1)
+mtext(side=2, expression(paste("",CO[2]," flux")), line=2.75, cex=1.25, col="black")
+mtext(side=2, expression(paste("", mu, "umol ",CO[2]," " , jar^-1," ",min^-1,"", sep="")), line=1.75, cex=1, col="black")
+errbar(position, Means,Upper, Lower, cap=0.015, xaxt="n", add=T, col=c("#0072B2","#e79f00"), pch="." )
+legend("topright", c("Birch Wafer + Soil Matrix","Soil Matrix Only"), col=c("#0072B2","#e79f00"), pch=c(16,16), bty="n")
+box()
+par(mgp=c(0,0.25,0))
+axis(1, at = c(2,5,8,11,14), labels = c("Gloeophyllum\ntrabeum", "Postia\nplacenta", "Schizophyllum\ncommune", "Pycnoporus\ncinnabarinus", "Trametes\nhirsuta"), 
+     las=2, tick = F, cex=0.6, font=3, line=0)
+
